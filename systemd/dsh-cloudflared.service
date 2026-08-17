@@ -1,0 +1,11 @@
+[Unit]
+Description=DSH cloudflared quick tunnel
+After=network-online.target
+
+[Service]
+ExecStart=/bin/bash %h/.dsh/bin/dsh-cloudflared.sh
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=default.target

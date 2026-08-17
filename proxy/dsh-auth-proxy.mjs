@@ -21,7 +21,8 @@ import http from "node:http";
 import crypto from "node:crypto";
 import fs from "node:fs";
 
-const CONFIG_PATH = process.env.DSH_REMOTE_CONFIG || process.env.HOME + "/.dsh/remote-auth.json";
+const HOME_DIR = process.env.HOME || process.env.USERPROFILE || ".";
+const CONFIG_PATH = process.env.DSH_REMOTE_CONFIG || HOME_DIR + "/.dsh/remote-auth.json";
 const cfg = {
   listen: "127.0.0.1:8443",
   upstream: "http://127.0.0.1:3080",

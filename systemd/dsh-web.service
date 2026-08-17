@@ -1,0 +1,11 @@
+[Unit]
+Description=DSH Web GUI
+After=network-online.target
+
+[Service]
+ExecStart=/bin/bash %h/.dsh/bin/dsh-web.sh
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=default.target
