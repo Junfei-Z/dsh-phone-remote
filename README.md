@@ -13,7 +13,7 @@ Use **DeepSeek Harness (DSH)** from your phone — like Claude Code's remote con
 
 ## Quick start: let your DSH install it for you ⚡
 
-Already running DSH on your computer? Don't even open a terminal — paste this into your DSH chat (http://127.0.0.1:3080):
+Already running DSH on your computer? Don't even open a terminal — paste this into your DSH chat (default address http://127.0.0.1:3080 — if you launch with a custom `--port`, use yours):
 
 > Help me set up phone remote access. Clone https://github.com/Junfei-Z/dsh-phone-remote locally, read its README, run the installer for my OS (`install.sh` on macOS, `install-linux.sh` on Linux), then give me the phone URL and access password.
 

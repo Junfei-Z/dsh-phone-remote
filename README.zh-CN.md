@@ -14,7 +14,7 @@
 
 ## 快速启动：让你电脑上的 DSH 自己装（最懒的方式）⚡
 
-电脑上已经跑着 DSH？连终端都不用开。直接在 DSH 的对话框（http://127.0.0.1:3080）里发这句话：
+电脑上已经跑着 DSH？连终端都不用开。直接在 DSH 的对话框里发这句话（默认地址 http://127.0.0.1:3080；如果你启动时用了 --port 自定义端口，用你自己的地址）：
 
 > 帮我安装手机远程访问。克隆 https://github.com/Junfei-Z/dsh-phone-remote 到本地，读它的 README，然后按我的系统执行安装脚本（macOS 跑 install.sh，Linux 跑 install-linux.sh），装完把手机端网址和访问密码告诉我。
 
