@@ -1,76 +1,78 @@
 # dsh-phone-remote
 
-让 **DeepSeek Harness（DSH）** 在手机上用——像 Claude Code 的 remote control 一样：出门在外也能发消息、看 Agent 实时干活、批准操作。
+**English** | [简体中文](README.zh-CN.md)
 
-- 💰 零成本（Cloudflare 免费快速隧道）
-- 📱 手机端**不用装 App、不用开 VPN**，iPhone / 安卓完全一样（不占 iPhone 唯一的 VPN 槽位，和代理 App 无冲突）
-- 💻 电脑端支持 **macOS / Linux / Windows**
-- 🔒 自带密码登录网关（DSH 本身没有登录机制，直接暴露等于把电脑挂公网裸奔）
-- 🔄 常驻自启：电脑重启、进程崩溃都会自动恢复
-- 🧩 通用：把 upstream 改成任意本地 Web 应用端口，这套方案同样适用
+Use **DeepSeek Harness (DSH)** from your phone — like Claude Code's remote control: send messages, watch the agent work in real time, and approve actions while away from your desk.
 
-## 快速启动：让你电脑上的 DSH 自己装（最懒的方式）⚡
+- 💰 Zero cost (Cloudflare free quick tunnel)
+- 📱 **No app, no VPN** on the phone — iPhone and Android work identically (and it won't fight proxy apps for iPhone's single VPN slot)
+- 💻 Host side: **macOS / Linux / Windows**
+- 🔒 Built-in password gate (DSH has no login mechanism — exposing it bare would be public remote code execution)
+- 🔄 Auto-restart: survives reboots and crashes
+- 🧩 Generic: point `upstream` at any local web app and the same recipe applies
 
-电脑上已经跑着 DSH？连终端都不用开。直接在 DSH 的对话框（http://127.0.0.1:3080）里发这句话：
+## Quick start: let your DSH install it for you ⚡
 
-> 帮我安装手机远程访问。克隆 https://github.com/Junfei-Z/dsh-phone-remote 到本地，读它的 README，然后按我的系统执行安装脚本（macOS 跑 install.sh，Linux 跑 install-linux.sh），装完把手机端网址和访问密码告诉我。
+Already running DSH on your computer? Don't even open a terminal — paste this into your DSH chat (http://127.0.0.1:3080):
 
-DSH 会自己克隆、装依赖、配服务，最后把**网址和密码**直接给你——你只管去手机上打开。🤯
+> Help me set up phone remote access. Clone https://github.com/Junfei-Z/dsh-phone-remote locally, read its README, run the installer for my OS (`install.sh` on macOS, `install-linux.sh` on Linux), then give me the phone URL and access password.
 
-（Windows 用户：让 DSH 阅读 `windows/start-dsh-remote.ps1` 并帮你运行。）
+DSH will clone, install dependencies, configure the services, and hand you the **URL and password** — you just open it on your phone. 🤯
 
-## 效果
+(Windows: ask DSH to read `windows/start-dsh-remote.ps1` and run it for you.)
+
+## What you get
 
 ```
-手机浏览器 → https://xxx.trycloudflare.com → 输一次密码 → 完整的 DSH GUI
-（发消息 / 看实时输出 / 批准工具调用 / 断线自动重连 / 添加到主屏幕）
+phone browser → https://xxx.trycloudflare.com → password once → full DSH GUI
+(messages / live output / tool approvals / auto-reconnect / add to home screen)
 ```
 
-## 平台支持
+## Platform support
 
-| 组合 | 支持情况 |
+| Setup | Status |
 |---|---|
-| Mac → iPhone | ✅ 一键脚本（`install.sh`） |
-| Mac → 安卓 | ✅ 同一脚本（手机端操作完全一样） |
-| Linux → 任意手机 | ✅ 一键脚本（`install-linux.sh`，systemd 用户服务） |
-| Windows → 任意手机 | ⚠️ 半自动（`windows/start-dsh-remote.ps1`，自启动见下文；欢迎 PR） |
+| Mac → iPhone | ✅ one-command (`install.sh`) |
+| Mac → Android | ✅ same script (phone steps are identical) |
+| Linux → any phone | ✅ one-command (`install-linux.sh`, systemd user services) |
+| Windows → any phone | ⚠️ semi-automatic (`windows/start-dsh-remote.ps1`; PRs welcome) |
 
-**手机端没有区别**：iPhone 和安卓都是"浏览器打开网址 → 输密码 → 添加到主屏幕"，iPhone 用 Safari，安卓用 Chrome/系统浏览器即可。
+**The phone side is identical everywhere**: open the URL in a browser (Safari on iPhone, Chrome on Android), enter the password, add to home screen.
 
-## 原理：为什么 DSH 默认连不上，这套又怎么解决
+## Why DSH isn't remotely reachable by default — and how this fixes it
 
-`dsh web` 启动的 GUI 只监听 `127.0.0.1:3080`，而且 `--host 0.0.0.0` 被官方刻意禁止——因为 GUI 能直接在你电脑上执行代码，而它**没有内置账号体系**。它有一道"浏览器信任围栏"（校验 Host/Origin 头，防 DNS rebinding 和 CSRF），但那是防攻击的，不是登录认证。
+`dsh web` serves the GUI on `127.0.0.1:3080` only, and `--host 0.0.0.0` is deliberately refused — the GUI can execute code on your machine yet **has no built-in accounts**. It does ship a "browser-trust fence" (Host/Origin checks against DNS rebinding and CSRF), but that's attack defense, not authentication.
 
-所以"手机访问"的本质是三个独立的问题，各用一招解决：
+So "phone access" is three independent problems, each with one fix:
 
 ```
-┌─────────┐   HTTPS    ┌──────────────┐  隧道(出站)  ┌──────────────────────────────┐
-│ 手机浏览器│ ────────→ │ Cloudflare   │ ───────────→ │ 你的电脑（无需公网 IP/端口映射）│
-└─────────┘           │ 边缘节点      │              │                              │
-                      └──────────────┘              │  ③ dsh-auth-proxy :8443      │
-                                                    │   密码登录 + Cookie + 限流      │
-                                                    │   ↓ 改写 Host / 剥掉 Origin    │
-                                                    │  ② dsh web :127.0.0.1:3080    │
-                                                    │   围栏看到"本机请求"，原生放行  │
-                                                    └──────────────────────────────┘
+┌────────────┐   HTTPS   ┌──────────────┐ tunnel(outbound) ┌───────────────────────────────┐
+│   phone    │ ────────→ │  Cloudflare  │ ───────────────→ │ your computer (no public IP /  │
+│  browser   │           │  edge        │                  │ no router changes needed)      │
+└────────────┘           └──────────────┘                  │  ③ dsh-auth-proxy :8443        │
+                                                           │   password + cookie + ratelimit│
+                                                           │   ↓ rewrite Host / strip Origin│
+                                                           │  ② dsh web :127.0.0.1:3080     │
+                                                           │   fence sees a local request   │
+                                                           └───────────────────────────────┘
 ```
 
-1. **打通网络** —— `cloudflared` 从电脑**主动向外**建立到 Cloudflare 的加密隧道。不需要公网 IP、不需要碰路由器、天然 HTTPS。全平台都有官方版本。
-2. **补上登录** —— 一个 200 行、零依赖的 Node 网关（`proxy/dsh-auth-proxy.mjs`）挡在隧道和 DSH 之间：没密码只看到登录页，登录后给 180 天有效的签名 Cookie，密码错误 8 次锁 5 分钟。跨平台。
-3. **过围栏** —— 网关转发时把 `Host` 改写成 `127.0.0.1:3080`、剥掉 `Origin`，DSH 的围栏认为请求来自本机，**DSH 零改动**。
+1. **Networking** — `cloudflared` builds an encrypted tunnel *outbound* from your computer to Cloudflare. No public IP, no router changes, HTTPS included. Official builds for every platform.
+2. **Authentication** — a ~200-line, zero-dependency Node gate (`proxy/dsh-auth-proxy.mjs`) sits between the tunnel and DSH: no password, no entry; a signed 180-day cookie after login; 8 wrong passwords locks the IP for 5 minutes. Cross-platform.
+3. **Fence compatibility** — the gate rewrites `Host` to `127.0.0.1:3080` and strips `Origin`, so DSH's fence sees a loopback request. **Zero changes to DSH itself.**
 
-唯一因系统而异的是"自启动"这层：macOS 用 launchd，Linux 用 systemd，Windows 用任务计划/启动文件夹。
+Only the auto-start layer is OS-specific: launchd on macOS, systemd on Linux, Task Scheduler/startup folder on Windows.
 
-## 手动安装
+## Manual install
 
-前置：装好 DSH（`npm exec @deepseek-ai/dsh web` 能跑通）、Node.js。
+Prerequisites: DSH working (`npm exec @deepseek-ai/dsh web`), Node.js.
 
 ### macOS
 
 ```zsh
 git clone https://github.com/Junfei-Z/dsh-phone-remote.git
 cd dsh-phone-remote
-./install.sh        # 会自动 brew 安装 cloudflared（若缺）
+./install.sh        # auto-installs cloudflared via Homebrew if missing
 ```
 
 ### Linux
@@ -78,12 +80,12 @@ cd dsh-phone-remote
 ```bash
 git clone https://github.com/Junfei-Z/dsh-phone-remote.git
 cd dsh-phone-remote
-./install-linux.sh  # cloudflared 需先自行安装（脚本会给出链接）
+./install-linux.sh  # cloudflared must be installed first (script prints the link)
 ```
 
-用的是 systemd 用户服务；想要"未登录也开机自启"：`sudo loginctl enable-linger $USER`。
+Uses systemd user services; for start-at-boot without login: `sudo loginctl enable-linger $USER`.
 
-### Windows（半自动）
+### Windows (semi-automatic)
 
 ```powershell
 git clone https://github.com/Junfei-Z/dsh-phone-remote.git
@@ -91,48 +93,46 @@ cd dsh-phone-remote
 powershell -ExecutionPolicy Bypass -File .\windows\start-dsh-remote.ps1
 ```
 
-开机自启（二选一）：
-- 把该脚本的快捷方式放进 `shell:startup` 文件夹；或
-- `schtasks /create /tn "DSH-Remote" /sc onlogon /tr "powershell -WindowStyle Hidden -ExecutionPolicy Bypass -File \"%USERPROFILE%\.dsh\bin\start-dsh-remote.ps1\""`（先把脚本复制到该路径）
+Auto-start (either): drop a shortcut to the script into `shell:startup`, or use the `schtasks` command from the Chinese README.
 
-> Windows 路径未实机测试，遇到问题欢迎提 Issue / PR。
+> The Windows path is not machine-tested — issues and PRs welcome.
 
-## 手机端（iPhone / 安卓相同）
+## Phone side (iPhone / Android identical)
 
-1. 浏览器打开安装时打印的网址
-2. 输入访问密码（180 天不用再输）
-3. 分享/菜单 → **添加到主屏幕** → 以后点图标即用
+1. Open the printed URL in your browser
+2. Enter the access password (once per 180 days)
+3. Share/menu → **Add to Home Screen** → tap the icon from now on
 
-## 升级为固定网址（可选）
+## Optional: a stable URL
 
-快速隧道的网址在电脑重启后会变（新网址永远在 `~/.dsh/remote-url.txt`，Windows 在 `%USERPROFILE%\.dsh\remote-url.txt`）。想要固定域名：
+Quick-tunnel URLs change when the computer restarts (the current one is always in `~/.dsh/remote-url.txt`). For a fixed hostname:
 
-1. 买一个域名托管到 Cloudflare（免费套餐即可，.xyz/.top 首年几块钱）
-2. Cloudflare Zero Trust → Networks → Tunnels → 创建 tunnel，Public Hostname 指到 `http://localhost:8443`
-3. 建议同时加 Access 应用（邮箱验证码登录），或继续用本仓库的密码网关
-4. 隧道改用官方常驻方式：`cloudflared service install <token>`
+1. Buy any domain and host it on Cloudflare (free plan works)
+2. Cloudflare Zero Trust → Networks → Tunnels → create a tunnel, point the Public Hostname at `http://localhost:8443`
+3. Optionally add a Cloudflare Access application (email OTP), or keep this repo's password gate
+4. Run the tunnel the official persistent way: `cloudflared service install <token>`
 
 ## FAQ
 
-**安全吗？** 公网只能摸到带密码的网关；DSH 本体只听 127.0.0.1。全程 HTTPS。密码在 `~/.dsh/remote-auth.json`，改 `password` 字段即换密码。千万不要把没有鉴权的 DSH 直接 `--host 0.0.0.0` 或用裸隧道暴露。
+**Is it secure?** The public internet can only reach the password gate; DSH itself stays on 127.0.0.1. Everything is HTTPS. The password lives in `~/.dsh/remote-auth.json` — edit the `password` field to rotate it. Never expose DSH without authentication (bare `--host 0.0.0.0` or an unauthenticated tunnel).
 
-**和 Tailscale 方案比？** Tailscale 也很棒（私有组网），但 iPhone 同时只能开一个 VPN 隧道——常用代理 App 就会冲突。本方案对手机就是"一个网址"，零冲突。
+**Why not Tailscale?** Tailscale is great (private mesh), but an iPhone can only run one VPN tunnel at a time — if you use proxy apps, they conflict. This approach is "just a URL" on the phone: zero conflicts.
 
-**Mac 合盖/睡眠？** macOS 安装包带 `caffeinate -s` 服务：接电源时不睡眠，拔电池自动失效。
+**Mac lid closed / asleep?** The macOS package includes a `caffeinate -s` service: no sleep on AC power, automatically inactive on battery.
 
-**卸载**：macOS `./uninstall.sh`；Linux `systemctl --user disable --now dsh-auth-proxy dsh-cloudflared dsh-web` 并删 `~/.config/systemd/user/dsh-*`。
+**Uninstall**: macOS `./uninstall.sh`; Linux `systemctl --user disable --now dsh-auth-proxy dsh-cloudflared dsh-web` and remove `~/.config/systemd/user/dsh-*`.
 
-## 文件说明
+## Files
 
-| 路径 | 作用 |
+| Path | Role |
 |---|---|
-| `proxy/dsh-auth-proxy.mjs` | 密码登录网关（零依赖 Node，全平台通用） |
-| `scripts/dsh-web.sh` | DSH GUI 启动器（含端口等待，和平接管） |
-| `scripts/dsh-cloudflared.sh` | 隧道包装（自动记录分配的网址） |
-| `launchd/*.plist` | macOS 常驻服务模板 |
-| `systemd/*.service` | Linux 常驻服务模板 |
-| `windows/start-dsh-remote.ps1` | Windows 启动脚本 |
-| `install.sh` / `install-linux.sh` / `uninstall.sh` | 安装与卸载 |
+| `proxy/dsh-auth-proxy.mjs` | password gate (zero-dependency Node, cross-platform) |
+| `scripts/dsh-web.sh` | DSH GUI launcher (waits for port handoff) |
+| `scripts/dsh-cloudflared.sh` | tunnel wrapper (records the assigned URL) |
+| `launchd/*.plist` | macOS service templates |
+| `systemd/*.service` | Linux service templates |
+| `windows/start-dsh-remote.ps1` | Windows starter |
+| `install.sh` / `install-linux.sh` / `uninstall.sh` | installers |
 
 ## License
 
