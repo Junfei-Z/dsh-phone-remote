@@ -28,6 +28,14 @@ phone browser → https://xxx.trycloudflare.com → password once → full DSH G
 (messages / live output / tool approvals / auto-reconnect / add to home screen)
 ```
 
+<p align="center">
+  <img src="docs/images/iphone-gui.png" width="280" alt="The full DSH console running on an iPhone">
+  &nbsp;&nbsp;
+  <img src="docs/images/iphone-homescreen.jpg" width="280" alt="DSH icon on the iPhone home screen">
+</p>
+
+<i align="center">Left: the full DSH console on an iPhone. Right: added to the home screen, it behaves like an app.</i>
+
 ## Platform support
 
 | Setup | Status |
