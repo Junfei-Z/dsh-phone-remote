@@ -35,7 +35,7 @@ DSH 会自己克隆、装依赖、配服务，最后把**网址和密码**直接
   <img src="docs/images/iphone-homescreen.jpg" width="280" alt="iPhone 主屏幕上的 DSH 图标">
 </p>
 
-<i align="center">左：iPhone 上运行的完整 DSH 控制台；右：添加到主屏幕后就像一个 App</i>
+<p align="center"><i>左：iPhone 上运行的完整 DSH 控制台；右：添加到主屏幕后就像一个 App</i></p>
 
 ## 平台支持
 

@@ -34,7 +34,7 @@ phone browser → https://xxx.trycloudflare.com → password once → full DSH G
   <img src="docs/images/iphone-homescreen.jpg" width="280" alt="DSH icon on the iPhone home screen">
 </p>
 
-<i align="center">Left: the full DSH console on an iPhone. Right: added to the home screen, it behaves like an app.</i>
+<p align="center"><i>Left: the full DSH console on an iPhone. Right: added to the home screen, it behaves like an app.</i></p>
 
 ## Platform support
 
