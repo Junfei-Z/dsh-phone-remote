@@ -13,4 +13,6 @@ rm -f "$URL_FILE"
     sleep 1
   done
 ) &
+# If QUIC is unstable on your network (repeated "control stream" errors in the
+# log — common behind proxies or flaky UDP), force TCP with: --protocol http2
 exec __CLOUDFLARED__ tunnel --no-autoupdate --url http://127.0.0.1:8443 >> "$LOG" 2>&1
