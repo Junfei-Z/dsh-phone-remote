@@ -10,7 +10,8 @@ $CfgFile = Join-Path $DshDir "remote-auth.json"
 $UrlFile = Join-Path $DshDir "remote-url.txt"
 New-Item -ItemType Directory -Force $BinDir, $LogDir | Out-Null
 
-# 1) 首次运行生成随机密码与密钥
+# 1) 首次运行生成随机密码与密钥（方案 B：独立 dsh web）
+$creds = Join-Path $DshDir ".credentials.yaml"
 if (-not (Test-Path $CfgFile)) {
   $hex = { -join (1..$args[0] | ForEach-Object { '{0:x}' -f (Get-Random -Maximum 16) }) }
   $pw  = (& $hex 4) + "-" + (& $hex 4) + "-" + (& $hex 4)
@@ -18,7 +19,10 @@ if (-not (Test-Path $CfgFile)) {
     password = $pw
     secret   = (& $hex 64)
     listen   = "127.0.0.1:8443"
+    target   = "url"
     upstream = "http://127.0.0.1:3080"
+    auth     = "dsh-cookie"
+    credentialsFile = $creds
     cookieName = "dsh_remote"
     cookieMaxAgeDays = 180
   } | ConvertTo-Json
