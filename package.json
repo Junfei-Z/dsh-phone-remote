@@ -47,6 +47,11 @@
   "peerDependencies": {
     "@deepseek-ai/schemastery": ">=3.0.0"
   },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/schemastery": {
+      "optional": true
+    }
+  },
   "devDependencies": {
     "@deepseek-ai/schemastery": "^3.19.0"
   }
