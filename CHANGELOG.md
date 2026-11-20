@@ -1,5 +1,41 @@
 # 更新日志
 
+## v2.1.0 — 2026-11-20
+
+**可以当 DSH 插件装了，为上架插件市场做好打包。**
+
+### 新增
+
+- **DSH bundle 插件形态**：`dsh plugin --profile web add dsh-phone-gate` 一条命令装好，
+  设置页里直接配置，不用开终端、不用装系统服务。npm 包名 `dsh-phone-gate`
+  （`dsh-phone-remote` 在 npm 上已被他人占用）。
+  - `package.json` 声明 `dsh.bundle.patch` + `engines.dsh`，`cordis.patch.yml` 贡献一行插件配置。
+  - `plugin/index.mjs`：Schemastery 设置项（上游、认证、密码、隧道），全部注册在 `ctx.effect()` 上，
+    禁用或改配置时网关和隧道一起干净收掉。
+  - `target: "auto"`：能发现桌面版本体就连它，否则回落到固定 `upstream`。
+  - 插件会自动起 Cloudflare 快速隧道并打印手机网址，也写进 `~/.dsh/remote-url.txt`。
+  - 密码和 cookie 密钥仍然读写 `~/.dsh/remote-auth.json`，所以**插件和常驻服务共用同一个密码**，
+    两种装法可以互换。
+  - **零构建**：纯 ESM，不需要 `prepare` 脚本，所以 `github:` 直装也不用 pnpm 的 `allowBuilds` 授权。
+- `test/gate.test.mjs`：网关端到端测试（`npm test`，20 项，不需要装 DSH）。覆盖登录门、
+  伪造/过期 cookie、限流、Host/Origin 改写、WebSocket 升级、上游失联，以及用独立实现的 HMAC
+  交叉验证现签出来的 DSH cookie。
+- README（中英）新增「插件装还是常驻服务装」对照表。
+
+### 变更
+
+- 网关逻辑抽到 `proxy/gate.mjs`，导出 `createGate()` / `detectDesktopPort()`；
+  原来的状态（密钥缓存、端口缓存、失败计数）从模块级变成每个实例独立，一个进程里可以跑多个网关。
+  `proxy/dsh-auth-proxy.mjs` 变成读配置文件的瘦入口，**常驻服务的行为和日志完全不变**，
+  现有 launchd / systemd / 计划任务安装无需改动。
+- `createGate().close()` 会销毁已升级的 WebSocket 连接再关监听，插件卸载时不留悬挂连接。
+
+### 说明
+
+- DSH 0.2.2 起官方声明 `node >=24.9.0`；网关自身只需要 Node 22.18，README 已注明。
+- `engines.dsh` 写成 `>=0.2.0-0` 而不是 `>=0.2.0`：DSH 当前只发预发布版（如 `0.2.2-rc.5`），
+  按 semver 规则 `>=0.2.0` 匹配不到带 `-rc` 的版本，会把用户挡在安装之外。
+
 ## v2.0.0 — 2026-11-06
 
 **两种方案 + 适配 DSH 0.2 的 cookie 认证。**

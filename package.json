@@ -1,0 +1,53 @@
+{
+  "name": "dsh-phone-gate",
+  "version": "2.1.0",
+  "description": "Use DeepSeek Harness from your phone: a password-gated Cloudflare tunnel in front of the DSH Web GUI. Attaches to the running desktop app on its random port by minting the browser-session cookie DSH would mint, so no app and no VPN on the phone and zero changes to DSH. Installable as a plugin or as a host service that outlives DSH.",
+  "type": "module",
+  "license": "MIT",
+  "main": "./plugin/index.mjs",
+  "exports": {
+    ".": "./plugin/index.mjs",
+    "./gate": "./proxy/gate.mjs"
+  },
+  "files": [
+    "plugin/",
+    "proxy/",
+    "cordis.patch.yml"
+  ],
+  "homepage": "https://github.com/Junfei-Z/dsh-phone-remote#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Junfei-Z/dsh-phone-remote.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Junfei-Z/dsh-phone-remote/issues"
+  },
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "dsh",
+    "remote",
+    "mobile",
+    "phone",
+    "cloudflare-tunnel",
+    "reverse-proxy"
+  ],
+  "engines": {
+    "node": ">=22.18",
+    "dsh": ">=0.2.0-0"
+  },
+  "scripts": {
+    "test": "node test/gate.test.mjs"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "peerDependencies": {
+    "@deepseek-ai/schemastery": ">=3.0.0"
+  },
+  "devDependencies": {
+    "@deepseek-ai/schemastery": "^3.19.0"
+  }
+}

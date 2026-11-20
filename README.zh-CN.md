@@ -5,6 +5,7 @@
 
 让 **DeepSeek Harness（DSH）** 在手机上用——像 Claude Code 的 remote control 一样：出门在外也能发消息、看 Agent 实时干活、批准操作。
 
+- 🔌 **一条命令装好**：可以当 DSH 插件装（`dsh plugin add dsh-phone-gate`），也可以当宿主机常驻服务装——后者在 DSH 重启、关闭时手机入口照样在
 - 💰 零成本（Cloudflare 免费快速隧道）
 - 📱 手机端**不用装 App、不用开 VPN**，iPhone / 安卓完全一样（不占 iPhone 唯一的 VPN 槽位，和代理 App 无冲突）
 - 🖥️ **两种接法**：连桌面版 Harness 本体（同一实例），或托管一个独立的 `dsh web`
@@ -13,7 +14,39 @@
 - 🔄 常驻自启：电脑重启、进程崩溃都会自动恢复
 - 🧩 通用：把 `auth` 设成 `none`，`upstream` 指向任意本地 Web 应用，这套方案同样适用
 
-## 快速启动：让你电脑上的 DSH 自己装（最懒的方式）⚡
+## 快速启动：当插件装 ⚡
+
+```sh
+dsh plugin --profile web add dsh-phone-gate
+```
+
+重载 `dsh web`，打开 **设置 → 插件 → dsh-phone-gate**。什么都不用配就能用：它会生成访问密码、在 `127.0.0.1:8443` 起网关、拉起 Cloudflare 快速隧道，并把手机网址打出来。桌面版在 **设置 → 插件 → 安装** 里填同一个包名。
+
+```
+[dsh-phone-gate] 网关已启动 http://127.0.0.1:8443 → DeepSeek Harness 桌面版（随机端口自动发现）[dsh-cookie]
+[dsh-phone-gate] 访问密码：a65f-6516-a8ac（可在 ~/.dsh/remote-auth.json 里改）
+[dsh-phone-gate] 手机访问地址：https://xxx-yyy-zzz.trycloudflare.com
+```
+
+网址同时写进 `~/.dsh/remote-url.txt`，密码写进 `~/.dsh/remote-auth.json`——所以插件和下面的常驻服务共用同一个密码。
+
+需要 `PATH` 里有 `cloudflared`（[官方构建](https://github.com/cloudflare/cloudflared/releases)）；或者把 `tunnel.enabled` 关掉，自己把隧道 / Tailscale / 反代指向 `http://127.0.0.1:8443`。
+
+### 插件装还是常驻服务装？
+
+同一套网关、同一个密码文件，区别只在**谁负责让它活着**，所以按「你想让什么一直在线」来挑：
+
+| | **插件**（`dsh plugin add`） | **常驻服务**（`install.sh`） |
+|---|---|---|
+| 安装 | 一条命令，设置页里可视化配置 | 一个脚本，launchd / systemd / 计划任务 |
+| 活多久 | 跟加载它的那个 DSH 进程同生共死 | 跟你的登录会话一样长——**DSH 重启、关掉，手机网址还在** |
+| 上游 | 当前这个 DSH，或任意本地应用 | 桌面版本体（随机端口）、`dsh web`、或任意本地应用 |
+| 隧道网址 | 插件每次重载都会变 | 开机重启才会变 |
+| 适合 | 先试试看；想要一键更新 | 长期挂着；在外面接管桌面版正在跑的会话 |
+
+常驻服务才是这个项目存在的理由：插件没法在托管它的进程挂掉时替你接电话。
+
+## 或者：让你电脑上的 DSH 自己装常驻服务（最懒的方式）
 
 电脑上已经跑着 DSH？连终端都不用开。直接在 DSH 的对话框里发这句话：
 
@@ -122,6 +155,9 @@ DSH 0.2 起，每个进程启动时生成一个随机 launch token，只印在�
 > 找不到会直接提示你升级。
 >
 > 方案 B 用 `npx` 兜底时，装到的 `dsh` 版本可能和桌面版不一致（会话数据格式有差异时先 `npm i -g @deepseek-ai/dsh@<同版本>`）。
+>
+> DSH 自己已经往前走了：`@deepseek-ai/dsh@0.2.2` 声明的是 `node >=24.9.0`。网关本身的代码只需要 22.18，
+> 所以常驻服务在 Node 22 上照样跑；但如果你想让 DSH 跑在它官方支持的运行时上，就装 Node 24。
 
 ### macOS
 
@@ -190,7 +226,11 @@ powershell -ExecutionPolicy Bypass -File .\windows\start-dsh-remote.ps1
 
 | 路径 | 作用 |
 |---|---|
-| `proxy/dsh-auth-proxy.mjs` | 密码登录网关（零依赖 Node）：两种上游模式 + 注入 DSH 会话 cookie |
+| `proxy/gate.mjs` | 网关本体（零依赖 Node）：密码 cookie、现签 DSH 会话 cookie、桌面版端口发现、限流、WebSocket 转发。两种装法共用这一份 |
+| `proxy/dsh-auth-proxy.mjs` | 常驻服务入口：读 `remote-auth.json` 并把网关跑起来 |
+| `plugin/index.mjs` | DSH 插件入口：设置项 schema、网关生命周期、Cloudflare 快速隧道 |
+| `package.json` + `cordis.patch.yml` | DSH bundle 清单及它贡献的配置层（npm 包名 `dsh-phone-gate`） |
+| `test/gate.test.mjs` | 网关端到端测试——`npm test`，不需要装 DSH |
 | `scripts/dsh-web.sh` | 方案 B 的 DSH GUI 启动器（含端口等待，和平接管） |
 | `scripts/dsh-cloudflared.sh` | 隧道包装（自动记录分配的网址） |
 | `launchd/*.plist` | macOS 常驻服务模板 |

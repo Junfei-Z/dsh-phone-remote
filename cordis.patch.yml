@@ -1,0 +1,5 @@
+# The layer this bundle contributes when a profile lists it.
+# One row: the gate plugin, configured from DSH's own plugin settings.
+- insert:
+    - id: dsh-phone-gate
+      name: dsh-phone-gate

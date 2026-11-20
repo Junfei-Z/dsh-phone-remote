@@ -4,6 +4,7 @@
 
 Use **DeepSeek Harness (DSH)** from your phone — like Claude Code's remote control: send messages, watch the agent work in real time, and approve actions while away from your desk.
 
+- 🔌 **One command to install**: a DSH plugin (`dsh plugin add dsh-phone-gate`) — or a host service that stays reachable while DSH restarts
 - 💰 Zero cost (Cloudflare free quick tunnel)
 - 📱 **No app, no VPN** on the phone — iPhone and Android work identically (and it won't fight proxy apps for iPhone's single VPN slot)
 - 🖥️ **Two modes**: attach to the running DeepSeek Harness **desktop app** (same instance), or host a **standalone `dsh web`**
@@ -12,7 +13,39 @@ Use **DeepSeek Harness (DSH)** from your phone — like Claude Code's remote con
 - 🔄 Auto-restart: survives reboots and crashes
 - 🧩 Generic: set `auth` to `none` and point `upstream` at any local web app
 
-## Quick start: let your DSH install it for you ⚡
+## Quick start: install it as a plugin ⚡
+
+```sh
+dsh plugin --profile web add dsh-phone-gate
+```
+
+Reload `dsh web`, open **Settings → Plugins → dsh-phone-gate**, and it already works with every default: it generates an access password, starts the gate on `127.0.0.1:8443`, brings up a Cloudflare quick tunnel, and prints the phone URL. The desktop app installs the same package from **Settings → Plugins → Install**.
+
+```
+[dsh-phone-gate] 网关已启动 http://127.0.0.1:8443 → DeepSeek Harness 桌面版（随机端口自动发现）[dsh-cookie]
+[dsh-phone-gate] 访问密码：a65f-6516-a8ac（可在 ~/.dsh/remote-auth.json 里改）
+[dsh-phone-gate] 手机访问地址：https://xxx-yyy-zzz.trycloudflare.com
+```
+
+The URL also lands in `~/.dsh/remote-url.txt` and the password in `~/.dsh/remote-auth.json`, so the plugin and the host service below share one password.
+
+You need `cloudflared` on `PATH` ([official builds](https://github.com/cloudflare/cloudflared/releases)); or set `tunnel.enabled` to `false` and point your own tunnel, Tailscale or reverse proxy at `http://127.0.0.1:8443`.
+
+### Plugin or host service?
+
+Same gate, same password file — they differ in who keeps it alive, so pick by what you want reachable:
+
+| | **Plugin** (`dsh plugin add`) | **Host service** (`install.sh`) |
+|---|---|---|
+| Install | one command, settings UI in DSH | one script, launchd / systemd / Task Scheduler |
+| Lives as long as | the DSH process that loaded it | your login session — **the phone URL stays up while DSH restarts or is closed** |
+| Upstream | this DSH, or any local app | the desktop app (random port), `dsh web`, or any local app |
+| Tunnel URL | reassigned whenever the plugin reloads | reassigned on reboot |
+| Best for | trying it out; one-click updates | leaving it running; taking over a desktop-app session from away |
+
+The host service is the reason this project exists: a plugin cannot answer the phone while the process that hosts it is down.
+
+## Or: let your DSH set up the host service for you
 
 Already running DSH on your computer? Don't even open a terminal — paste this into your DSH chat:
 
@@ -119,6 +152,8 @@ Prerequisites: **Node.js ≥ 22.18 (or 24)**, plus either the DeepSeek Harness d
 
 > ⚠️ The Node version matters: dsh's entry point gates on `import.meta.main`, which only exists in Node 22.18+ / 24. On an older Node, `dsh web` **exits 0 silently** — no error, no output, no listener. `install.sh` probes for a usable node and tells you to upgrade if it finds none.
 >
+> DSH itself has moved on: `@deepseek-ai/dsh@0.2.2` declares `node >=24.9.0`. The gate's own code only needs 22.18, so the standalone service still runs on Node 22 — but install Node 24 if you want DSH on its supported runtime.
+>
 > In mode B the `npx` fallback may pull a different `dsh` version than your desktop app; if session files ever disagree, align them with `npm i -g @deepseek-ai/dsh@<same version>`.
 
 ### macOS
@@ -186,7 +221,11 @@ Quick-tunnel URLs change when the computer restarts (the current one is always i
 
 | Path | Role |
 |---|---|
-| `proxy/dsh-auth-proxy.mjs` | password gate (zero-dependency Node): two upstream modes + DSH cookie injection |
+| `proxy/gate.mjs` | the gate itself (zero-dependency Node): password cookie, DSH cookie minting, desktop-port discovery, rate limit, WebSocket proxying. Shared by both install forms |
+| `proxy/dsh-auth-proxy.mjs` | host-service entry point: reads `remote-auth.json` and runs the gate |
+| `plugin/index.mjs` | DSH plugin entry point: settings schema, gate lifecycle, Cloudflare quick tunnel |
+| `package.json` + `cordis.patch.yml` | the DSH bundle manifest and the layer it contributes (published to npm as `dsh-phone-gate`) |
+| `test/gate.test.mjs` | end-to-end gate tests — `npm test`, no DSH needed |
 | `scripts/dsh-web.sh` | mode B's DSH GUI launcher (waits for port handoff) |
 | `scripts/dsh-cloudflared.sh` | tunnel wrapper (records the assigned URL) |
 | `launchd/*.plist` | macOS service templates |
