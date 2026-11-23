@@ -1,0 +1,63 @@
+# Publish dsh-phone-gate to npm when a v* tag is pushed.
+#
+# Setup, once: create an npm Automation token (npmjs.com -> Access Tokens) and
+# add it as the repository secret NPM_TOKEN (Settings -> Secrets and variables
+# -> Actions). The token never has to leave your browser.
+#
+# Release: bump "version" in package.json, commit, then
+#   git tag v2.1.0 && git push --tags
+#
+# npm holds a fresh release for about 24h before anyone can install it
+# (minimum-release-age, a supply-chain guard), so expect
+# `dsh plugin add dsh-phone-gate` to fail until the next day.
+name: publish
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Pack and test only, publish nothing'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  id-token: write   # required by --provenance
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+
+      # The gate is zero-dependency and the tests import only node: builtins,
+      # so there is nothing to install — and no lockfile for `npm ci` to read.
+      - name: Test
+        run: npm test
+
+      - name: Check the tag matches package.json
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          pkg="$(node -p 'require("./package.json").version')"
+          if [ "$tag" != "$pkg" ]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match package.json version $pkg"
+            exit 1
+          fi
+          echo "tag $GITHUB_REF_NAME matches package.json $pkg"
+
+      - name: Show what would be published
+        run: npm pack --dry-run
+
+      - name: Publish
+        if: startsWith(github.ref, 'refs/tags/v') && inputs.dry_run != true
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
