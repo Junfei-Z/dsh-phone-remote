@@ -1,5 +1,10 @@
 # dsh-phone-remote
 
+[![Awesome DSH Plugin](https://awesome-dsh-plugin.com/badge.svg)](https://awesome-dsh-plugin.com)
+[![npm](https://img.shields.io/npm/v/dsh-phone-gate)](https://www.npmjs.com/package/dsh-phone-gate)
+[![publish](https://github.com/Junfei-Z/dsh-phone-remote/actions/workflows/publish.yml/badge.svg)](https://github.com/Junfei-Z/dsh-phone-remote/actions/workflows/publish.yml)
+[![license](https://img.shields.io/github/license/Junfei-Z/dsh-phone-remote)](LICENSE)
+
 **[English](README.md)** | 简体中文
 
 
