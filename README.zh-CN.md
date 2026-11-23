@@ -10,6 +10,8 @@
 
 让 **DeepSeek Harness（DSH）** 在手机上用——像 Claude Code 的 remote control 一样：出门在外也能发消息、看 Agent 实时干活、批准操作。
 
+已以 [`dsh-phone-gate`](https://www.npmjs.com/package/dsh-phone-gate) 发布到 npm（带构建来源证明），并[收录](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/18231)进 [Awesome DSH Plugin](https://awesome-dsh-plugin.com) 精选目录——DSH 内置插件市场读的就是这份目录。
+
 - 🔌 **一条命令装好**：可以当 DSH 插件装（`dsh plugin add dsh-phone-gate`），也可以当宿主机常驻服务装——后者在 DSH 重启、关闭时手机入口照样在
 - 💰 零成本（Cloudflare 免费快速隧道）
 - 📱 手机端**不用装 App、不用开 VPN**，iPhone / 安卓完全一样（不占 iPhone 唯一的 VPN 槽位，和代理 App 无冲突）

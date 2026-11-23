@@ -9,6 +9,8 @@
 
 Use **DeepSeek Harness (DSH)** from your phone — like Claude Code's remote control: send messages, watch the agent work in real time, and approve actions while away from your desk.
 
+Published on npm as [`dsh-phone-gate`](https://www.npmjs.com/package/dsh-phone-gate) with build provenance, and [listed](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/18231) in the curated [Awesome DSH Plugin](https://awesome-dsh-plugin.com) registry that the in-app plugin market reads.
+
 - 🔌 **One command to install**: a DSH plugin (`dsh plugin add dsh-phone-gate`) — or a host service that stays reachable while DSH restarts
 - 💰 Zero cost (Cloudflare free quick tunnel)
 - 📱 **No app, no VPN** on the phone — iPhone and Android work identically (and it won't fight proxy apps for iPhone's single VPN slot)
