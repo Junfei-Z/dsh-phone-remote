@@ -41,6 +41,9 @@ jobs:
             exit 0
           fi
           npm publish --access public
-          npm view dsh-provider-gmi name version dist.tarball
+          # npm stages token publishes: the version stays hidden until a
+          # maintainer approves it with 2FA (npmjs.com -> Staged Packages,
+          # or `npm stage approve <id>`), so do not look it up here.
+          echo "::notice::dsh-provider-gmi@$version is staged on npm; approve it under Staged Packages on npmjs.com."
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

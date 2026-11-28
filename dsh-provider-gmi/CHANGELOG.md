@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.1.1 — 2026-11-28
+
+- Fix: the `dsh-provider-gmi` command (`npx dsh-provider-gmi doctor`) was missing from 0.1.0, because npm 11
+  drops a `bin` path written as `./bin/...` at publish time. The DSH bundle itself was unaffected.
+
 ## v0.1.0 — 2026-11-28
 
 First release.

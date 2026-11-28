@@ -17,6 +17,11 @@ test("package.json points DSH at the bundle patch and ships it", () => {
   assert.equal(pkg.dsh.bundle.patch, "./cordis.patch.yml");
   assert.ok(pkg.files.includes("cordis.patch.yml"));
   assert.ok(pkg.keywords.includes("dsh-plugin"), "the plugin market indexes the dsh-plugin keyword");
+  // npm 11 silently drops a bin whose path starts with "./" at publish time.
+  for (const [name, target] of Object.entries(pkg.bin)) {
+    assert.doesNotMatch(target, /^\.\//u, `bin ${name} must not start with ./`);
+    assert.ok(fs.existsSync(new URL(`../${target}`, import.meta.url)), `bin ${name} points at a missing file`);
+  }
   // DSH ships prereleases (0.2.2-rc.5); a plain >=0.2.0 would refuse them.
   assert.match(pkg.engines.dsh, /-0$/u);
 });
