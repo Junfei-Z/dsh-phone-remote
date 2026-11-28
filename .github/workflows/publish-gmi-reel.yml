@@ -1,0 +1,43 @@
+# One-off: publish gmi-reel (https://github.com/Junfei-Z/gmi-reel) to npm with
+# this repository's NPM_TOKEN, until gmi-reel has its own release workflow.
+# Idempotent: skips when this version is already on npm.
+name: publish gmi-reel
+
+on:
+  push:
+    branches: [claude/zen-rubin-qd3e5i]
+    paths:
+      - '.github/workflows/publish-gmi-reel.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: Junfei-Z/gmi-reel
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+
+      - run: npm ci
+      - run: npm test
+      - run: npm pack --dry-run
+
+      - name: Publish unless this version exists
+        run: |
+          version="$(node -p 'require("./package.json").version')"
+          if npm view "gmi-reel@$version" version >/dev/null 2>&1; then
+            echo "gmi-reel@$version is already on npm; nothing to do."
+            exit 0
+          fi
+          npm publish --access public
+          echo "::notice::gmi-reel@$version published; npm may take a few minutes to serve it."
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
